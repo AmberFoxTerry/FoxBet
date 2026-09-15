@@ -3,6 +3,7 @@ const playerId = getPlayerId();
 function getPlayerId() {
 let id = localStorage.getItem("foxbet_player_id");
 
+```
 if (!id) {
     id = crypto.randomUUID();
 
@@ -13,6 +14,7 @@ if (!id) {
 }
 
 return id;
+```
 
 }
 
@@ -69,6 +71,7 @@ CONNECTION
 
 ws.onopen = () => {
 
+```
 ws.send(JSON.stringify({
     type: "identify",
     playerId: playerId
@@ -78,16 +81,15 @@ resultElement.textContent =
     "Connected to FoxBet.";
 
 updateBuyButton();
+```
 
 };
 
 ws.onmessage = (event) => {
 
+```
 const data =
     JSON.parse(event.data);
-
-
-/* BALANCE */
 
 if (data.type === "balance") {
 
@@ -102,9 +104,6 @@ if (data.type === "balance") {
     return;
 }
 
-
-/* TICKET STARTED */
-
 if (data.type === "ticket_started") {
 
     foxCoins =
@@ -118,9 +117,6 @@ if (data.type === "ticket_started") {
     return;
 }
 
-
-/* TILE REVEAL */
-
 if (data.type === "reveal") {
 
     revealTile(
@@ -131,18 +127,12 @@ if (data.type === "reveal") {
     return;
 }
 
-
-/* TICKET FINISHED */
-
 if (data.type === "ticket_finished") {
 
     finishTicket(data);
 
     return;
 }
-
-
-/* ERROR */
 
 if (data.type === "error") {
 
@@ -153,24 +143,29 @@ if (data.type === "error") {
 
     return;
 }
+```
 
 };
 
 ws.onerror = () => {
 
+```
 resultElement.textContent =
     "Connection error.";
+```
 
 };
 
 ws.onclose = () => {
 
+```
 gameActive = false;
 
 resultElement.textContent =
     "Disconnected from server.";
 
 updateBuyButton();
+```
 
 };
 
@@ -180,6 +175,7 @@ BET SELECTION
 
 betButtons.forEach(button => {
 
+```
 button.addEventListener(
     "click",
     () => {
@@ -187,20 +183,16 @@ button.addEventListener(
         if (gameActive)
             return;
 
-
         const amount =
             Number(
                 button.dataset.bet
             );
 
-
         selectedBet =
             amount;
 
-
         selectedBetElement.textContent =
             `${selectedBet} FC`;
-
 
         betButtons.forEach(
             other => {
@@ -210,18 +202,16 @@ button.addEventListener(
             }
         );
 
-
         button.style.borderColor =
             "#ff7a00";
-
 
         resultElement.textContent =
             `${selectedBet} FC bet selected.`;
 
-
         updateBuyButton();
     }
 );
+```
 
 });
 
@@ -233,6 +223,7 @@ buyTicketButton.addEventListener(
 "click",
 () => {
 
+```
     if (selectedBet <= 0) {
 
         resultElement.textContent =
@@ -240,7 +231,6 @@ buyTicketButton.addEventListener(
 
         return;
     }
-
 
     if (
         ws.readyState !==
@@ -253,10 +243,8 @@ buyTicketButton.addEventListener(
         return;
     }
 
-
     buyTicketButton.disabled =
         true;
-
 
     ws.send(JSON.stringify({
 
@@ -266,6 +254,7 @@ buyTicketButton.addEventListener(
 
     }));
 }
+```
 
 );
 
@@ -282,6 +271,7 @@ buyTicketButton.disabled =
     gameActive ||
     ws.readyState !==
         WebSocket.OPEN;
+```
 
 }
 
@@ -291,8 +281,8 @@ START GAME
 
 function startGame() {
 
+```
 gameActive = true;
-
 
 cells.forEach(cell => {
 
@@ -306,22 +296,19 @@ cells.forEach(cell => {
     cell.disabled = false;
 });
 
-
 resultElement.textContent =
     "Reveal every tile.";
-
 
 buyTicketButton.disabled =
     true;
 
-
 playAgainButton.style.display =
     "none";
-
 
 winOverlay.classList.remove(
     "show"
 );
+```
 
 }
 
@@ -331,13 +318,13 @@ REVEAL TILES
 
 cells.forEach((cell, index) => {
 
+```
 cell.addEventListener(
     "click",
     () => {
 
         if (!gameActive)
             return;
-
 
         if (
             cell.classList.contains(
@@ -347,7 +334,6 @@ cell.addEventListener(
             return;
         }
 
-
         if (
             ws.readyState !==
             WebSocket.OPEN
@@ -355,9 +341,7 @@ cell.addEventListener(
             return;
         }
 
-
         cell.disabled = true;
-
 
         ws.send(JSON.stringify({
 
@@ -368,40 +352,35 @@ cell.addEventListener(
         }));
     }
 );
+```
 
 });
 
 function revealTile(index, symbol) {
 
+```
 const cell =
     cells[index];
-
 
 if (!cell)
     return;
 
-
 cell.textContent =
     symbol;
-
 
 cell.classList.add(
     "revealed"
 );
 
-
 cell.disabled = true;
-
 
 const revealed =
     document.querySelectorAll(
         ".cell.revealed"
     ).length;
 
-
 const remaining =
     9 - revealed;
-
 
 if (remaining > 0) {
 
@@ -413,6 +392,7 @@ if (remaining > 0) {
     resultElement.textContent =
         "Checking ticket...";
 }
+```
 
 }
 
@@ -425,14 +405,11 @@ function finishTicket(data) {
 ```
 gameActive = false;
 
-
 foxCoins =
     data.balance;
 
-
 balanceElement.textContent =
     foxCoins;
-
 
 if (Array.isArray(data.wins)) {
 
@@ -455,23 +432,14 @@ if (Array.isArray(data.wins)) {
     });
 }
 
-
-/* LOSS */
-
 if (data.totalWin <= 0) {
 
     resultElement.textContent =
         "No line. You lost the ticket.";
 
-}
-
-
-/* WIN */
-
-else {
+} else {
 
     let message = "";
-
 
     data.wins.forEach(
         (win, index) => {
@@ -480,7 +448,6 @@ else {
                 `Line ${index + 1}: ` +
                 `${win.symbol} ` +
                 `+${win.amount} FC`;
-
 
             if (
                 index <
@@ -493,26 +460,22 @@ else {
         }
     );
 
-
     message +=
         ` | Total win: +${data.totalWin} FC`;
 
-
     resultElement.textContent =
         message;
-
 
     showWinOverlay(
         data.totalWin
     );
 }
 
-
 playAgainButton.style.display =
     "block";
 
-
 updateBuyButton();
+```
 
 }
 
@@ -526,11 +489,9 @@ function showWinOverlay(amount) {
 winAmountElement.textContent =
     `+${amount} FC`;
 
-
 winOverlay.classList.add(
     "show"
 );
-
 
 setTimeout(() => {
 
@@ -539,6 +500,7 @@ setTimeout(() => {
     );
 
 }, 1800);
+```
 
 }
 
@@ -550,8 +512,8 @@ playAgainButton.addEventListener(
 "click",
 () => {
 
+```
     gameActive = false;
-
 
     cells.forEach(cell => {
 
@@ -565,13 +527,10 @@ playAgainButton.addEventListener(
         cell.disabled = false;
     });
 
-
     selectedBet = 0;
-
 
     selectedBetElement.textContent =
         "None";
-
 
     betButtons.forEach(button => {
 
@@ -579,22 +538,19 @@ playAgainButton.addEventListener(
             "";
     });
 
-
     resultElement.textContent =
-        "Choose your bet.";
-
+        "Choose a bet.";
 
     playAgainButton.style.display =
         "none";
-
 
     winOverlay.classList.remove(
         "show"
     );
 
-
     updateBuyButton();
 }
+```
 
 );
 
