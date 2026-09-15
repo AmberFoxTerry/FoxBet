@@ -9,13 +9,29 @@ const wss = new WebSocketServer({
     server
 });
 
+// Temporary server-side balances
+const players = new Map();
+
 wss.on("connection", (socket) => {
 
     console.log("Player connected!");
 
+    // Give this connection a temporary player ID
+    const playerId = Math.random().toString(36).slice(2);
+
+    players.set(playerId, {
+        balance: 200
+    });
+
     socket.send(JSON.stringify({
         type: "welcome",
         message: "Connected to FoxBet server 🦊"
+    }));
+
+    // Send balance to client
+    socket.send(JSON.stringify({
+        type: "balance",
+        balance: players.get(playerId).balance
     }));
 
     socket.on("message", (data) => {
@@ -25,6 +41,8 @@ wss.on("connection", (socket) => {
     });
 
     socket.on("close", () => {
+
+        players.delete(playerId);
 
         console.log("Player disconnected.");
 
