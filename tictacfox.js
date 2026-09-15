@@ -5,7 +5,7 @@
 const BALANCE_KEY = "foxcoins";
 
 let foxCoins =
-    Number(localStorage.getItem(BALANCE_KEY));
+    Number(localStorage.getItem(BALANCE_KEY)) || 0;
 
 const balanceElement =
     document.getElementById("balance");
@@ -20,8 +20,6 @@ function updateBalance() {
     balanceElement.textContent =
         foxCoins;
 }
-
-updateBalance();
 
 
 // =========================
@@ -54,25 +52,69 @@ const winAmountElement =
 
 
 // =========================
+// SYMBOLS
+// =========================
+
+const symbols = [
+    {
+        symbol: "♥️",
+        chance: 50,
+        multiplier: 0.5
+    },
+    {
+        symbol: "🔥",
+        chance: 25,
+        multiplier: 1
+    },
+    {
+        symbol: "⭐",
+        chance: 15,
+        multiplier: 2
+    },
+    {
+        symbol: "🌙",
+        chance: 9,
+        multiplier: 2.5
+    },
+    {
+        symbol: "🦊",
+        chance: 1,
+        multiplier: 5
+    }
+];
+
+
+// =========================
 // GAME STATE
 // =========================
 
 let selectedBet = 0;
-
-let board = [
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    ""
-];
-
+let board = [];
 let gameActive = false;
-let playerTurn = true;
+
+
+// =========================
+// RANDOM SYMBOL
+// =========================
+
+function generateSymbol() {
+
+    const roll =
+        Math.random() * 100;
+
+    let total = 0;
+
+    for (const item of symbols) {
+
+        total += item.chance;
+
+        if (roll < total) {
+            return item.symbol;
+        }
+    }
+
+    return "♥️";
+}
 
 
 // =========================
@@ -134,20 +176,21 @@ buyTicketButton.addEventListener("click", () => {
 
 
 // =========================
-// BUY BUTTON STATE
+// BUY BUTTON
 // =========================
 
 function updateBuyButton() {
 
     buyTicketButton.disabled =
         selectedBet <= 0 ||
-        selectedBet > foxCoins;
+        selectedBet > foxCoins ||
+        gameActive;
 
 }
 
 
 // =========================
-// START GAME
+// START TICKET
 // =========================
 
 function startGame() {
@@ -165,34 +208,37 @@ function startGame() {
     ];
 
     gameActive = true;
-    playerTurn = true;
 
     cells.forEach(cell => {
 
         cell.textContent = "";
 
-        cell.classList.remove("revealed");
-        cell.classList.remove("winning");
+        cell.classList.remove(
+            "revealed",
+            "winning"
+        );
 
         cell.disabled = false;
 
     });
 
     resultElement.textContent =
-        "Your turn.";
+        "Reveal every tile.";
 
     buyTicketButton.disabled = true;
 
     playAgainButton.style.display =
         "none";
 
-    winOverlay.classList.remove("show");
+    winOverlay.classList.remove(
+        "show"
+    );
 
 }
 
 
 // =========================
-// PLAYER MOVE
+// REVEAL TILE
 // =========================
 
 cells.forEach((cell, index) => {
@@ -203,34 +249,28 @@ cells.forEach((cell, index) => {
             return;
         }
 
-        if (!playerTurn) {
-            return;
-        }
-
         if (board[index] !== "") {
             return;
         }
 
-        board[index] = "X";
+        const symbol =
+            generateSymbol();
 
-        cell.textContent = "X";
+        board[index] = symbol;
 
-        cell.classList.add("revealed");
+        cell.textContent =
+            symbol;
 
-        playerTurn = false;
+        cell.classList.add(
+            "revealed"
+        );
 
-        const playerWin =
-            checkWinner("X");
+        cell.disabled = true;
 
-        if (playerWin) {
 
-            endGame(
-                "win",
-                playerWin
-            );
-
-            return;
-        }
+        // =====================
+        // CHECK FULL BOARD
+        // =====================
 
         if (
             board.every(
@@ -238,18 +278,19 @@ cells.forEach((cell, index) => {
             )
         ) {
 
-            endGame("draw");
+            finishTicket();
 
-            return;
+        } else {
+
+            const remaining =
+                board.filter(
+                    value => value === ""
+                ).length;
+
+            resultElement.textContent =
+                `${remaining} tiles remaining.`;
+
         }
-
-        resultElement.textContent =
-            "Fox's turn...";
-
-        setTimeout(
-            foxMove,
-            350
-        );
 
     });
 
@@ -257,94 +298,22 @@ cells.forEach((cell, index) => {
 
 
 // =========================
-// FOX MOVE
+// WINNING LINES
 // =========================
 
-function foxMove() {
+const winningLines = [
 
-    if (!gameActive) {
-        return;
-    }
-
-    const emptyCells = [];
-
-    board.forEach((value, index) => {
-
-        if (value === "") {
-            emptyCells.push(index);
-        }
-
-    });
-
-    if (emptyCells.length === 0) {
-
-        endGame("draw");
-
-        return;
-    }
-
-    const randomIndex =
-        emptyCells[
-            Math.floor(
-                Math.random() *
-                emptyCells.length
-            )
-        ];
-
-    board[randomIndex] = "O";
-
-    cells[randomIndex].textContent = "O";
-
-    cells[randomIndex]
-        .classList
-        .add("revealed");
-
-    const foxWin =
-        checkWinner("O");
-
-    if (foxWin) {
-
-        endGame(
-            "lose",
-            foxWin
-        );
-
-        return;
-    }
-
-    if (
-        board.every(
-            value => value !== ""
-        )
-    ) {
-
-        endGame("draw");
-
-        return;
-    }
-
-    playerTurn = true;
-
-    resultElement.textContent =
-        "Your turn.";
-
-}
-
-
-// =========================
-// WINNING PATTERNS
-// =========================
-
-const winningPatterns = [
-
+    // Horizontal
     [0, 1, 2],
     [3, 4, 5],
     [6, 7, 8],
 
+    // Vertical
     [0, 3, 6],
     [1, 4, 7],
     [2, 5, 8],
 
+    // Diagonal
     [0, 4, 8],
     [2, 4, 6]
 
@@ -352,48 +321,113 @@ const winningPatterns = [
 
 
 // =========================
-// CHECK WINNER
+// CHECK LINES
 // =========================
 
-function checkWinner(player) {
+function getWinningLines() {
 
-    for (const pattern of winningPatterns) {
+    const wins = [];
 
-        const [a, b, c] =
-            pattern;
+    for (const line of winningLines) {
+
+        const [a, b, c] = line;
 
         if (
-            board[a] === player &&
-            board[b] === player &&
-            board[c] === player
+            board[a] !== "" &&
+            board[a] === board[b] &&
+            board[b] === board[c]
         ) {
 
-            return pattern;
+            wins.push(line);
 
         }
 
     }
 
-    return null;
+    return wins;
 
 }
 
 
 // =========================
-// END GAME
+// GET SYMBOL DATA
 // =========================
 
-function endGame(
-    result,
-    winningCells = null
-) {
+function getSymbolData(symbol) {
+
+    return symbols.find(
+        item => item.symbol === symbol
+    );
+
+}
+
+
+// =========================
+// FINISH TICKET
+// =========================
+
+function finishTicket() {
 
     gameActive = false;
-    playerTurn = false;
 
-    if (winningCells) {
+    const winningLinesFound =
+        getWinningLines();
 
-        winningCells.forEach(index => {
+
+    // =====================
+    // NO WIN
+    // =====================
+
+    if (winningLinesFound.length === 0) {
+
+        resultElement.textContent =
+            `No line. You lost ${selectedBet} FC.`;
+
+        playAgainButton.style.display =
+            "block";
+
+        updateBuyButton();
+
+        return;
+    }
+
+
+    // =====================
+    // FIND BEST WIN
+    // =====================
+
+    let bestWin = null;
+
+    for (
+        const line of winningLinesFound
+    ) {
+
+        const symbol =
+            board[line[0]];
+
+        const data =
+            getSymbolData(symbol);
+
+        if (
+            bestWin === null ||
+            data.multiplier >
+            bestWin.data.multiplier
+        ) {
+
+            bestWin = {
+                line: line,
+                data: data
+            };
+
+        }
+
+    }
+
+
+    // Highlight all winning lines
+    winningLinesFound.forEach(line => {
+
+        line.forEach(index => {
 
             cells[index]
                 .classList
@@ -401,58 +435,27 @@ function endGame(
 
         });
 
-    }
+    });
 
 
     // =====================
-    // WIN
+    // PAYOUT
     // =====================
 
-    if (result === "win") {
+    const winnings =
+        selectedBet *
+        bestWin.data.multiplier;
 
-        const winnings =
-            selectedBet * 2;
+    foxCoins += winnings;
 
-        foxCoins += winnings;
+    updateBalance();
 
-        updateBalance();
+    resultElement.textContent =
+        `${bestWin.data.symbol} line! You won ${winnings} FC!`;
 
-        resultElement.textContent =
-            `You won ${winnings} FC!`;
-
-        showWinOverlay(
-            winnings
-        );
-
-    }
-
-
-    // =====================
-    // LOSE
-    // =====================
-
-    else if (result === "lose") {
-
-        resultElement.textContent =
-            `You lost ${selectedBet} FC.`;
-
-    }
-
-
-    // =====================
-    // DRAW
-    // =====================
-
-    else if (result === "draw") {
-
-        foxCoins += selectedBet;
-
-        updateBalance();
-
-        resultElement.textContent =
-            "Draw! Your bet was refunded.";
-
-    }
+    showWinOverlay(
+        winnings
+    );
 
     playAgainButton.style.display =
         "block";
@@ -471,7 +474,9 @@ function showWinOverlay(amount) {
     winAmountElement.textContent =
         `+${amount} FC`;
 
-    winOverlay.classList.add("show");
+    winOverlay.classList.add(
+        "show"
+    );
 
     setTimeout(() => {
 
@@ -492,48 +497,37 @@ playAgainButton.addEventListener(
     "click",
     () => {
 
-        board = [
-            "",
-            "",
-            "",
-            "",
-            "",
-            "",
-            "",
-            ""
-        ];
+        board = [];
 
         gameActive = false;
-        playerTurn = true;
 
         cells.forEach(cell => {
 
             cell.textContent = "";
 
             cell.classList.remove(
-                "revealed"
-            );
-
-            cell.classList.remove(
+                "revealed",
                 "winning"
             );
 
+            cell.disabled = false;
+
         });
-
-        resultElement.textContent =
-            "Choose your bet.";
-
-        winOverlay.classList.remove(
-            "show"
-        );
-
-        playAgainButton.style.display =
-            "none";
 
         selectedBet = 0;
 
         selectedBetElement.textContent =
             "None";
+
+        resultElement.textContent =
+            "Choose a bet.";
+
+        playAgainButton.style.display =
+            "none";
+
+        winOverlay.classList.remove(
+            "show"
+        );
 
         updateBuyButton();
 
