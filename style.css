@@ -58,6 +58,40 @@ body {
 }
 
 /* =========================
+   EXIT ARROW
+========================= */
+
+.exit-arrow {
+    position: fixed;
+
+    top: 78px;
+    left: 24px;
+
+    background: none;
+    border: none;
+
+    color: #777;
+
+    font-size: 32px;
+    font-weight: bold;
+
+    cursor: pointer;
+
+    padding: 0;
+
+    transition:
+        color 0.15s,
+        transform 0.15s;
+
+    z-index: 100;
+}
+
+.exit-arrow:hover {
+    color: #ff7a00;
+    transform: translateX(-3px);
+}
+
+/* =========================
    FOXBET HOME
 ========================= */
 
@@ -499,6 +533,12 @@ body {
 
     .win-amount {
         font-size: 42px;
+    }
+
+    .exit-arrow {
+        top: 74px;
+        left: 18px;
+        font-size: 29px;
     }
 
 }
