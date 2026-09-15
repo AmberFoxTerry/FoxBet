@@ -42,8 +42,6 @@ PLAYERS
 const players = new Map();
 
 function getPlayer(playerId) {
-
-```
 if (!players.has(playerId)) {
 
     players.set(playerId, {
