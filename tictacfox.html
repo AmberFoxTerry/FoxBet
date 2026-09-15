@@ -1,673 +1,113 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>TicTacFox</title>
+    <title>TicTacFox - FoxBet</title>
 
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-    <!-- TOP BAR -->
+<header class="top-bar">
 
-    <header class="top-bar">
+    <div class="logo">
+        &gt; FoxBet
+    </div>
 
-        <div class="logo" onclick="location.href='index.html'">
-            &gt; FoxBet
+    <div class="balance">
+        <span id="balance">200</span>
+        <span>FoxCoins</span>
+    </div>
+
+</header>
+
+
+<main class="tictacfox">
+
+    <h1>TicTacFox</h1>
+
+    <p class="description">
+        Pick your bet. Play Tic-Tac-Toe. Beat the Fox.
+    </p>
+
+
+    <!-- BETS -->
+
+    <div class="bets">
+
+        <button data-bet="10">10 FC</button>
+        <button data-bet="25">25 FC</button>
+        <button data-bet="50">50 FC</button>
+        <button data-bet="100">100 FC</button>
+
+    </div>
+
+
+    <div class="selected-bet">
+        Selected bet:
+        <span>None</span>
+    </div>
+
+
+    <button id="buy-ticket">
+        Buy Ticket
+    </button>
+
+
+    <!-- BOARD -->
+
+    <div class="board-wrapper">
+
+        <div class="grid">
+
+            <button class="cell" data-index="0"></button>
+            <button class="cell" data-index="1"></button>
+            <button class="cell" data-index="2"></button>
+
+            <button class="cell" data-index="3"></button>
+            <button class="cell" data-index="4"></button>
+            <button class="cell" data-index="5"></button>
+
+            <button class="cell" data-index="6"></button>
+            <button class="cell" data-index="7"></button>
+            <button class="cell" data-index="8"></button>
+
         </div>
 
-        <div class="balance">
-            <span id="balance">200</span> <span>FoxCoins</span>
-        </div>
 
-    </header>
+        <!-- WIN OVERLAY -->
 
+        <div class="win-overlay">
 
-    <!-- GAME -->
-
-    <main class="tictacfox">
-
-        <h1>TicTacFox</h1>
-
-        <p class="description">
-            Click symbols. Line wins.
-        </p>
-
-
-        <!-- BET SELECTION -->
-
-        <div class="bets">
-
-            <button onclick="setBet(2)">
-                2 FC
-            </button>
-
-            <button onclick="setBet(10)">
-                10 FC
-            </button>
-
-            <button onclick="setBet(50)">
-                50 FC
-            </button>
-
-            <button onclick="setBet(100)">
-                100 FC
-            </button>
-
-        </div>
-
-
-        <div class="selected-bet">
-            Bet:
-            <span id="bet">2</span> FC
-        </div>
-
-
-        <!-- BUY TICKET -->
-
-        <button id="buy-ticket" onclick="buyTicket()">
-            BUY TICKET
-        </button>
-
-
-        <!-- GAME BOARD -->
-
-        <div class="board-wrapper">
-
-            <div id="win-overlay" class="win-overlay">
-
-                <div class="win-title">
-                    WIN
-                </div>
-
-                <div id="win-amount" class="win-amount">
-                    0 FC
-                </div>
-
+            <div class="win-title">
+                YOU WIN!
             </div>
 
-
-            <div id="grid" class="grid">
-
-                <button class="cell" onclick="revealCell(0)">?</button>
-                <button class="cell" onclick="revealCell(1)">?</button>
-                <button class="cell" onclick="revealCell(2)">?</button>
-
-                <button class="cell" onclick="revealCell(3)">?</button>
-                <button class="cell" onclick="revealCell(4)">?</button>
-                <button class="cell" onclick="revealCell(5)">?</button>
-
-                <button class="cell" onclick="revealCell(6)">?</button>
-                <button class="cell" onclick="revealCell(7)">?</button>
-                <button class="cell" onclick="revealCell(8)">?</button>
-
+            <div class="win-amount">
+                +0 FC
             </div>
 
         </div>
 
+    </div>
 
-        <!-- RESULT -->
 
-        <div id="result" class="result">
-            Choose your bet and buy a ticket.
-        </div>
+    <div class="result">
+        Choose your bet.
+    </div>
 
 
-        <!-- PLAY AGAIN -->
+    <button class="play-again">
+        New Ticket
+    </button>
 
-        <button
-            id="play-again"
-            class="play-again"
-            onclick="resetBoard()"
-        >
-            NEW TICKET
-        </button>
+</main>
 
-    </main>
 
-
-    <script>
-
-        /* =========================
-           BALANCE
-        ========================= */
-
-        let balance = Number(
-            localStorage.getItem("foxcoins")
-        );
-
-        if (isNaN(balance)) {
-
-            balance = 200;
-
-            localStorage.setItem(
-                "foxcoins",
-                balance
-            );
-        }
-
-
-        /* =========================
-           GAME STATE
-        ========================= */
-
-        let bet = 2;
-
-        let ticketBought = false;
-
-        let revealed = 0;
-
-        let symbolsOnBoard = [];
-
-
-        /* =========================
-           SYMBOLS
-        ========================= */
-
-        const symbols = [
-
-            {
-                symbol: "♥️",
-                chance: 50,
-                multiplier: 0.5
-            },
-
-            {
-                symbol: "🔥",
-                chance: 25,
-                multiplier: 1
-            },
-
-            {
-                symbol: "⭐",
-                chance: 15,
-                multiplier: 2
-            },
-
-            {
-                symbol: "🌙",
-                chance: 9,
-                multiplier: 2.5
-            },
-
-            {
-                symbol: "🦊",
-                chance: 1,
-                multiplier: 5
-            }
-
-        ];
-
-
-        /* =========================
-           LINES
-        ========================= */
-
-        const lines = [
-
-            [0, 1, 2],
-            [3, 4, 5],
-            [6, 7, 8],
-
-            [0, 3, 6],
-            [1, 4, 7],
-            [2, 5, 8],
-
-            [0, 4, 8],
-            [2, 4, 6]
-
-        ];
-
-
-        /* =========================
-           ELEMENTS
-        ========================= */
-
-        const balanceElement =
-            document.getElementById("balance");
-
-        const betElement =
-            document.getElementById("bet");
-
-        const grid =
-            document.getElementById("grid");
-
-        const result =
-            document.getElementById("result");
-
-        const buyButton =
-            document.getElementById("buy-ticket");
-
-        const playAgainButton =
-            document.getElementById("play-again");
-
-        const winOverlay =
-            document.getElementById("win-overlay");
-
-        const winAmount =
-            document.getElementById("win-amount");
-
-
-        /* =========================
-           BALANCE
-        ========================= */
-
-        function updateBalance() {
-
-            balanceElement.textContent =
-                balance;
-
-            localStorage.setItem(
-                "foxcoins",
-                balance
-            );
-        }
-
-
-        /* =========================
-           BET
-        ========================= */
-
-        function setBet(amount) {
-
-            if (ticketBought)
-                return;
-
-            bet = amount;
-
-            betElement.textContent =
-                amount;
-        }
-
-
-        /* =========================
-           RANDOM SYMBOL
-        ========================= */
-
-        function randomSymbol() {
-
-            const roll =
-                Math.random() * 100;
-
-            let total = 0;
-
-            for (const item of symbols) {
-
-                total += item.chance;
-
-                if (roll < total) {
-
-                    return item;
-                }
-            }
-
-            return symbols[0];
-        }
-
-
-        /* =========================
-           BUY TICKET
-        ========================= */
-
-        function buyTicket() {
-
-            if (ticketBought)
-                return;
-
-            if (balance < bet) {
-
-                result.textContent =
-                    "Not enough FoxCoins!";
-
-                return;
-            }
-
-
-            /*
-             * Remove the bet immediately.
-             */
-
-            balance -= bet;
-
-            updateBalance();
-
-
-            /*
-             * Start fresh board.
-             */
-
-            ticketBought = true;
-
-            revealed = 0;
-
-            symbolsOnBoard = [];
-
-
-            winOverlay.classList.remove(
-                "show"
-            );
-
-
-            winAmount.textContent =
-                "0 FC";
-
-
-            result.textContent =
-                "Reveal all 9 symbols!";
-
-
-            const cells =
-                document.querySelectorAll(
-                    ".cell"
-                );
-
-
-            cells.forEach(cell => {
-
-                cell.textContent = "?";
-
-                cell.classList.remove(
-                    "revealed"
-                );
-
-                cell.classList.remove(
-                    "winning"
-                );
-
-            });
-
-
-            buyButton.disabled = true;
-
-            buyButton.textContent =
-                "TICKET ACTIVE";
-
-
-            playAgainButton.style.display =
-                "none";
-        }
-
-
-        /* =========================
-           REVEAL CELL
-        ========================= */
-
-        function revealCell(index) {
-
-            if (!ticketBought)
-                return;
-
-            const cell =
-                document.querySelectorAll(
-                    ".cell"
-                )[index];
-
-
-            if (cell.classList.contains(
-                "revealed"
-            )) {
-                return;
-            }
-
-
-            const item =
-                randomSymbol();
-
-
-            symbolsOnBoard[index] =
-                item;
-
-
-            cell.textContent =
-                item.symbol;
-
-
-            cell.classList.add(
-                "revealed"
-            );
-
-
-            revealed++;
-
-
-            result.textContent =
-                `${revealed} / 9 revealed`;
-
-
-            /*
-             * Evaluate only after
-             * the entire ticket is revealed.
-             */
-
-            if (revealed === 9) {
-
-                evaluateTicket();
-            }
-        }
-
-
-        /* =========================
-           EVALUATE TICKET
-        ========================= */
-
-        function evaluateTicket() {
-
-            let totalWin = 0;
-
-            let winningLines = 0;
-
-
-            lines.forEach((line, lineIndex) => {
-
-                const a =
-                    symbolsOnBoard[line[0]];
-
-                const b =
-                    symbolsOnBoard[line[1]];
-
-                const c =
-                    symbolsOnBoard[line[2]];
-
-
-                if (
-                    a.symbol === b.symbol &&
-                    b.symbol === c.symbol
-                ) {
-
-                    winningLines++;
-
-
-                    /*
-                     * Highlight this line.
-                     */
-
-                    highlightLine(
-                        lineIndex
-                    );
-
-
-                    /*
-                     * Pay according
-                     * to the symbol.
-                     */
-
-                    const win =
-                        bet * a.multiplier;
-
-                    totalWin += win;
-                }
-
-            });
-
-
-            /*
-             * Add winnings.
-             */
-
-            balance += totalWin;
-
-            updateBalance();
-
-
-            /*
-             * Show big casino-style
-             * result.
-             */
-
-            winAmount.textContent =
-                formatMoney(totalWin) + " FC";
-
-
-            winOverlay.classList.add(
-                "show"
-            );
-
-
-            if (winningLines > 0) {
-
-                result.textContent =
-                    `${winningLines} winning line${winningLines === 1 ? "" : "s"}!`;
-
-            } else {
-
-                result.textContent =
-                    "No winning lines. Better luck next time!";
-
-            }
-
-
-            ticketBought = false;
-
-
-            buyButton.disabled = false;
-
-            buyButton.textContent =
-                "BUY TICKET";
-
-
-            playAgainButton.style.display =
-                "block";
-        }
-
-
-        /* =========================
-           HIGHLIGHT LINE
-        ========================= */
-
-        function highlightLine(
-            lineIndex
-        ) {
-
-            const cells =
-                document.querySelectorAll(
-                    ".cell"
-                );
-
-
-            lines[lineIndex].forEach(
-                index => {
-
-                    cells[index]
-                        .classList
-                        .add("winning");
-
-                }
-            );
-        }
-
-
-        /* =========================
-           FORMAT MONEY
-        ========================= */
-
-        function formatMoney(amount) {
-
-            if (
-                Number.isInteger(amount)
-            ) {
-
-                return amount
-                    .toString();
-            }
-
-
-            return amount
-                .toFixed(1)
-                .replace(".0", "");
-        }
-
-
-        /* =========================
-           NEW TICKET
-        ========================= */
-
-        function resetBoard() {
-
-            revealed = 0;
-
-            symbolsOnBoard = [];
-
-            ticketBought = false;
-
-
-            const cells =
-                document.querySelectorAll(
-                    ".cell"
-                );
-
-
-            cells.forEach(cell => {
-
-                cell.textContent = "?";
-
-                cell.classList.remove(
-                    "revealed"
-                );
-
-                cell.classList.remove(
-                    "winning"
-                );
-
-            });
-
-
-            winOverlay.classList.remove(
-                "show"
-            );
-
-
-            winAmount.textContent =
-                "0 FC";
-
-
-            result.textContent =
-                "Choose your bet and buy a ticket.";
-
-
-            buyButton.disabled = false;
-
-            buyButton.textContent =
-                "BUY TICKET";
-
-
-            playAgainButton.style.display =
-                "none";
-        }
-
-
-        /* =========================
-           INITIAL STATE
-        ========================= */
-
-        updateBalance();
-
-        resetBoard();
-
-    </script>
+<script src="tictacfox.js"></script>
 
 </body>
 </html>
