@@ -3,9 +3,9 @@
 // =========================
 
 const ws =
-    new WebSocket("wss://foxbet.onrender.com");
-
-let foxCoins = 0;
+    new WebSocket(
+        "wss://foxbet.onrender.com"
+    );
 
 
 // =========================
@@ -22,29 +22,44 @@ const betButtons =
     document.querySelectorAll(".bets button");
 
 const selectedBetElement =
-    document.querySelector(".selected-bet span");
+    document.querySelector(
+        ".selected-bet span"
+    );
 
 const buyTicketButton =
-    document.getElementById("buy-ticket");
+    document.getElementById(
+        "buy-ticket"
+    );
 
 const resultElement =
-    document.querySelector(".result");
+    document.querySelector(
+        ".result"
+    );
 
 const playAgainButton =
-    document.querySelector(".play-again");
+    document.querySelector(
+        ".play-again"
+    );
 
 const winOverlay =
-    document.querySelector(".win-overlay");
+    document.querySelector(
+        ".win-overlay"
+    );
 
 const winAmountElement =
-    document.querySelector(".win-amount");
+    document.querySelector(
+        ".win-amount"
+    );
 
 
 // =========================
 // GAME STATE
 // =========================
 
+let foxCoins = 0;
+
 let selectedBet = 0;
+
 let gameActive = false;
 
 
@@ -72,7 +87,9 @@ ws.onmessage = (event) => {
     // BALANCE
     // =====================
 
-    if (data.type === "balance") {
+    if (
+        data.type === "balance"
+    ) {
 
         foxCoins =
             data.balance;
@@ -90,7 +107,9 @@ ws.onmessage = (event) => {
     // TICKET STARTED
     // =====================
 
-    if (data.type === "ticket_started") {
+    if (
+        data.type === "ticket_started"
+    ) {
 
         foxCoins =
             data.balance;
@@ -105,10 +124,12 @@ ws.onmessage = (event) => {
 
 
     // =====================
-    // TILE REVEAL
+    // REVEAL
     // =====================
 
-    if (data.type === "reveal") {
+    if (
+        data.type === "reveal"
+    ) {
 
         revealTile(
             data.index,
@@ -120,10 +141,13 @@ ws.onmessage = (event) => {
 
 
     // =====================
-    // TICKET FINISHED
+    // FINISHED
     // =====================
 
-    if (data.type === "ticket_finished") {
+    if (
+        data.type ===
+        "ticket_finished"
+    ) {
 
         finishTicket(data);
 
@@ -132,15 +156,23 @@ ws.onmessage = (event) => {
 
 
     // =====================
-    // SERVER ERROR
+    // ERROR
     // =====================
 
-    if (data.type === "error") {
+    if (
+        data.type === "error"
+    ) {
 
         resultElement.textContent =
             data.message;
 
         gameActive = false;
+
+        cells.forEach(cell => {
+
+            cell.disabled = false;
+
+        });
 
         updateBuyButton();
 
@@ -162,7 +194,7 @@ ws.onclose = () => {
     gameActive = false;
 
     resultElement.textContent =
-        "Disconnected from FoxBet.";
+        "Disconnected from server.";
 
     updateBuyButton();
 
@@ -183,35 +215,47 @@ betButtons.forEach(button => {
                 return;
             }
 
+
             const amount =
-                Number(button.dataset.bet);
+                Number(
+                    button.dataset.bet
+                );
+
 
             if (!amount) {
                 return;
             }
 
+
             selectedBet =
                 amount;
+
 
             selectedBetElement.textContent =
                 `${selectedBet} FC`;
 
-            // Highlight selected button
+
+            // Remove old selection
 
             betButtons.forEach(
-                otherButton => {
+                other => {
 
-                    otherButton.style.borderColor =
+                    other.style.borderColor =
                         "";
 
                 }
             );
 
+
+            // Highlight selected
+
             button.style.borderColor =
                 "#ff7a00";
 
+
             resultElement.textContent =
                 `${selectedBet} FC bet selected.`;
+
 
             updateBuyButton();
 
@@ -237,6 +281,7 @@ buyTicketButton.addEventListener(
             return;
         }
 
+
         if (
             ws.readyState !==
             WebSocket.OPEN
@@ -248,7 +293,10 @@ buyTicketButton.addEventListener(
             return;
         }
 
-        if (selectedBet > foxCoins) {
+
+        if (
+            selectedBet > foxCoins
+        ) {
 
             resultElement.textContent =
                 "Not enough FoxCoins.";
@@ -256,8 +304,10 @@ buyTicketButton.addEventListener(
             return;
         }
 
+
         resultElement.textContent =
             "Buying ticket...";
+
 
         buyTicketButton.disabled =
             true;
@@ -265,8 +315,11 @@ buyTicketButton.addEventListener(
 
         ws.send(
             JSON.stringify({
+
                 type: "buy_ticket",
+
                 bet: selectedBet
+
             })
         );
 
@@ -284,13 +337,14 @@ function updateBuyButton() {
         selectedBet <= 0 ||
         selectedBet > foxCoins ||
         gameActive ||
-        ws.readyState !== WebSocket.OPEN;
+        ws.readyState !==
+            WebSocket.OPEN;
 
 }
 
 
 // =========================
-// START TICKET
+// START GAME
 // =========================
 
 function startGame() {
@@ -315,11 +369,14 @@ function startGame() {
     resultElement.textContent =
         "Reveal every tile.";
 
+
     buyTicketButton.disabled =
         true;
 
+
     playAgainButton.style.display =
         "none";
+
 
     winOverlay.classList.remove(
         "show"
@@ -342,6 +399,7 @@ cells.forEach((cell, index) => {
                 return;
             }
 
+
             if (
                 cell.classList.contains(
                     "revealed"
@@ -349,6 +407,7 @@ cells.forEach((cell, index) => {
             ) {
                 return;
             }
+
 
             if (
                 ws.readyState !==
@@ -358,16 +417,19 @@ cells.forEach((cell, index) => {
             }
 
 
-            // Prevent double clicking
+            // Temporarily disable it
+            // while waiting for server
 
-            cell.disabled =
-                true;
+            cell.disabled = true;
 
 
             ws.send(
                 JSON.stringify({
+
                     type: "reveal",
+
                     index: index
+
                 })
             );
 
@@ -378,24 +440,31 @@ cells.forEach((cell, index) => {
 
 
 // =========================
-// SHOW REVEALED TILE
+// DISPLAY TILE
 // =========================
 
-function revealTile(index, symbol) {
+function revealTile(
+    index,
+    symbol
+) {
 
     const cell =
         cells[index];
+
 
     if (!cell) {
         return;
     }
 
+
     cell.textContent =
         symbol;
+
 
     cell.classList.add(
         "revealed"
     );
+
 
     cell.disabled =
         true;
@@ -439,22 +508,16 @@ function finishTicket(data) {
     // UPDATE BALANCE
     // =====================
 
-    if (
-        typeof data.balance ===
-        "number"
-    ) {
+    foxCoins =
+        data.balance;
 
-        foxCoins =
-            data.balance;
 
-        balanceElement.textContent =
-            foxCoins;
-
-    }
+    balanceElement.textContent =
+        foxCoins;
 
 
     // =====================
-    // HIGHLIGHT WINNING LINES
+    // HIGHLIGHT WINNERS
     // =====================
 
     if (
@@ -464,22 +527,22 @@ function finishTicket(data) {
         data.wins.forEach(win => {
 
             if (
-                Array.isArray(
-                    win.line
-                )
+                Array.isArray(win.line)
             ) {
 
-                win.line.forEach(index => {
+                win.line.forEach(
+                    index => {
 
-                    if (cells[index]) {
+                        if (cells[index]) {
 
-                        cells[index]
-                            .classList
-                            .add("winning");
+                            cells[index]
+                                .classList
+                                .add("winning");
+
+                        }
 
                     }
-
-                });
+                );
 
             }
 
@@ -493,7 +556,6 @@ function finishTicket(data) {
     // =====================
 
     if (
-        !data.totalWin ||
         data.totalWin <= 0
     ) {
 
@@ -510,42 +572,36 @@ function finishTicket(data) {
 
 
     // =====================
-    // SHOW EACH WIN
+    // WIN MESSAGE
     // =====================
 
     let message = "";
 
 
-    if (
-        Array.isArray(data.wins)
-    ) {
+    data.wins.forEach(
+        (win, index) => {
 
-        data.wins.forEach(
-            (win, index) => {
+            message +=
+                `Line ${index + 1}: ` +
+                `${win.symbol} ` +
+                `+${win.amount} FC`;
+
+            if (
+                index <
+                data.wins.length - 1
+            ) {
 
                 message +=
-                    `Line ${index + 1}: ` +
-                    `${win.symbol} ` +
-                    `+${win.amount} FC`;
-
-                if (
-                    index <
-                    data.wins.length - 1
-                ) {
-
-                    message +=
-                        " | ";
-
-                }
+                    " | ";
 
             }
-        );
 
-    }
+        }
+    );
 
 
     message +=
-        ` Total win: +${data.totalWin} FC`;
+        ` | Total win: +${data.totalWin} FC`;
 
 
     resultElement.textContent =
@@ -553,7 +609,7 @@ function finishTicket(data) {
 
 
     // =====================
-    // WIN OVERLAY
+    // OVERLAY
     // =====================
 
     showWinOverlay(
@@ -563,6 +619,7 @@ function finishTicket(data) {
 
     playAgainButton.style.display =
         "block";
+
 
     updateBuyButton();
 
@@ -577,6 +634,7 @@ function showWinOverlay(amount) {
 
     winAmountElement.textContent =
         `+${amount} FC`;
+
 
     winOverlay.classList.add(
         "show"
@@ -621,6 +679,7 @@ playAgainButton.addEventListener(
 
         selectedBet = 0;
 
+
         selectedBetElement.textContent =
             "None";
 
@@ -636,7 +695,7 @@ playAgainButton.addEventListener(
 
 
         resultElement.textContent =
-            "Choose a bet.";
+            "Choose your bet.";
 
 
         playAgainButton.style.display =
