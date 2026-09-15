@@ -4,51 +4,6 @@
     padding: 0;
 }
 
-body {
-    background: #080808;
-    color: white;
-    font-family: Arial, sans-serif;
-    min-height: 100vh;
-}
-
-/* Top navigation */
-
-.top-bar {
-    height: 64px;
-    width: 100%;
-
-    background: #ff7a00;
-
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-
-    padding: 0 28px;
-
-    box-shadow: 0 3px 15px rgba(0, 0, 0, 0.5);
-}
-
-.logo {
-    font-size: 25px;
-    font-weight: bold;
-    cursor: pointer;
-}
-
-.balance {
-    font-size: 18px;
-    font-weight: bold;
-}
-
-.balance span {
-    font-weight: normal;
-    opacity: 0.85;
-}
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-}
-
 html,
 body {
     width: 100%;
@@ -148,25 +103,6 @@ body {
     .games {
         grid-template-columns: 1fr;
         width: 94%;
-    }
-
-    .top-bar {
-        padding: 0 18px;
-    }
-}
-  font-size: 22px;
-    margin-bottom: 8px;
-}
-
-.game-card p {
-    color: #777;
-}
-
-/* Mobile */
-
-@media (max-width: 700px) {
-    .games {
-        grid-template-columns: 1fr;
     }
 
     .top-bar {
