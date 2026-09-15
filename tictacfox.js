@@ -393,38 +393,9 @@ function finishTicket() {
 
 
     // =====================
-    // FIND BEST WIN
+    // HIGHLIGHT LINES
     // =====================
 
-    let bestWin = null;
-
-    for (
-        const line of winningLinesFound
-    ) {
-
-        const symbol =
-            board[line[0]];
-
-        const data =
-            getSymbolData(symbol);
-
-        if (
-            bestWin === null ||
-            data.multiplier >
-            bestWin.data.multiplier
-        ) {
-
-            bestWin = {
-                line: line,
-                data: data
-            };
-
-        }
-
-    }
-
-
-    // Highlight all winning lines
     winningLinesFound.forEach(line => {
 
         line.forEach(index => {
@@ -439,23 +410,79 @@ function finishTicket() {
 
 
     // =====================
-    // PAYOUT
+    // CALCULATE EACH LINE
     // =====================
 
-    const winnings =
-        selectedBet *
-        bestWin.data.multiplier;
+    let totalWinnings = 0;
 
-    foxCoins += winnings;
+    const lineResults = [];
+
+
+    winningLinesFound.forEach(
+        (line, index) => {
+
+            const symbol =
+                board[line[0]];
+
+            const data =
+                getSymbolData(symbol);
+
+            const winnings =
+                selectedBet *
+                data.multiplier;
+
+            totalWinnings += winnings;
+
+            lineResults.push({
+                number: index + 1,
+                symbol: symbol,
+                winnings: winnings
+            });
+
+        }
+    );
+
+
+    // =====================
+    // ADD TOTAL WIN
+    // =====================
+
+    foxCoins += totalWinnings;
 
     updateBalance();
 
+
+    // =====================
+    // SHOW EACH LINE
+    // =====================
+
+    let message = "";
+
+    lineResults.forEach(line => {
+
+        message +=
+            `Line ${line.number}: ` +
+            `${line.symbol} +${line.winnings} FC | `;
+
+    });
+
+
+    message +=
+        `Total win: +${totalWinnings} FC`;
+
+
     resultElement.textContent =
-        `${bestWin.data.symbol} line! You won ${winnings} FC!`;
+        message;
+
+
+    // =====================
+    // WIN OVERLAY
+    // =====================
 
     showWinOverlay(
-        winnings
+        totalWinnings
     );
+
 
     playAgainButton.style.display =
         "block";
