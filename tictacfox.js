@@ -3,7 +3,6 @@ const playerId = getPlayerId();
 function getPlayerId() {
 let id = localStorage.getItem("foxbet_player_id");
 
-```
 if (!id) {
     id = crypto.randomUUID();
 
@@ -14,7 +13,6 @@ if (!id) {
 }
 
 return id;
-```
 
 }
 
@@ -71,7 +69,6 @@ CONNECTION
 
 ws.onopen = () => {
 
-```
 ws.send(JSON.stringify({
     type: "identify",
     playerId: playerId
@@ -81,13 +78,11 @@ resultElement.textContent =
     "Connected to FoxBet.";
 
 updateBuyButton();
-```
 
 };
 
 ws.onmessage = (event) => {
 
-```
 const data =
     JSON.parse(event.data);
 
@@ -143,29 +138,24 @@ if (data.type === "error") {
 
     return;
 }
-```
 
 };
 
 ws.onerror = () => {
 
-```
 resultElement.textContent =
     "Connection error.";
-```
 
 };
 
 ws.onclose = () => {
 
-```
 gameActive = false;
 
 resultElement.textContent =
     "Disconnected from server.";
 
 updateBuyButton();
-```
 
 };
 
@@ -175,7 +165,6 @@ BET SELECTION
 
 betButtons.forEach(button => {
 
-```
 button.addEventListener(
     "click",
     () => {
@@ -211,7 +200,6 @@ button.addEventListener(
         updateBuyButton();
     }
 );
-```
 
 });
 
@@ -223,7 +211,6 @@ buyTicketButton.addEventListener(
 "click",
 () => {
 
-```
     if (selectedBet <= 0) {
 
         resultElement.textContent =
@@ -254,7 +241,6 @@ buyTicketButton.addEventListener(
 
     }));
 }
-```
 
 );
 
@@ -264,14 +250,12 @@ BUY BUTTON STATE
 
 function updateBuyButton() {
 
-```
 buyTicketButton.disabled =
     selectedBet <= 0 ||
     selectedBet > foxCoins ||
     gameActive ||
     ws.readyState !==
         WebSocket.OPEN;
-```
 
 }
 
@@ -281,7 +265,6 @@ START GAME
 
 function startGame() {
 
-```
 gameActive = true;
 
 cells.forEach(cell => {
@@ -308,7 +291,6 @@ playAgainButton.style.display =
 winOverlay.classList.remove(
     "show"
 );
-```
 
 }
 
@@ -318,7 +300,6 @@ REVEAL TILES
 
 cells.forEach((cell, index) => {
 
-```
 cell.addEventListener(
     "click",
     () => {
@@ -352,13 +333,11 @@ cell.addEventListener(
         }));
     }
 );
-```
 
 });
 
 function revealTile(index, symbol) {
 
-```
 const cell =
     cells[index];
 
@@ -392,7 +371,6 @@ if (remaining > 0) {
     resultElement.textContent =
         "Checking ticket...";
 }
-```
 
 }
 
@@ -402,7 +380,6 @@ FINISH TICKET
 
 function finishTicket(data) {
 
-```
 gameActive = false;
 
 foxCoins =
@@ -475,7 +452,6 @@ playAgainButton.style.display =
     "block";
 
 updateBuyButton();
-```
 
 }
 
@@ -485,7 +461,6 @@ WIN OVERLAY
 
 function showWinOverlay(amount) {
 
-```
 winAmountElement.textContent =
     `+${amount} FC`;
 
@@ -500,7 +475,6 @@ setTimeout(() => {
     );
 
 }, 1800);
-```
 
 }
 
@@ -512,7 +486,6 @@ playAgainButton.addEventListener(
 "click",
 () => {
 
-```
     gameActive = false;
 
     cells.forEach(cell => {
@@ -550,7 +523,6 @@ playAgainButton.addEventListener(
 
     updateBuyButton();
 }
-```
 
 );
 
