@@ -1,283 +1,349 @@
-// =========================
-// SERVER
-// =========================
+const playerId = getPlayerId();
 
-const ws =
-    new WebSocket(
-        "wss://foxbet.onrender.com"
+function getPlayerId() {
+let id = localStorage.getItem("foxbet_player_id");
+
+if (!id) {
+    id = crypto.randomUUID();
+
+    localStorage.setItem(
+        "foxbet_player_id",
+        id
     );
+}
 
+return id;
 
-// =========================
-// ELEMENTS
-// =========================
+}
+
+/* =========================
+WEBSOCKET
+========================= */
+
+const ws = new WebSocket(
+"wss://foxbet.onrender.com"
+);
+
+/* =========================
+ELEMENTS
+========================= */
 
 const balanceElement =
-    document.getElementById("balance");
+document.getElementById("balance");
 
 const cells =
-    document.querySelectorAll(".cell");
+document.querySelectorAll(".cell");
 
 const betButtons =
-    document.querySelectorAll(".bets button");
+document.querySelectorAll(".bets button");
 
 const selectedBetElement =
-    document.querySelector(
-        ".selected-bet span"
-    );
+document.querySelector(".selected-bet span");
 
 const buyTicketButton =
-    document.getElementById(
-        "buy-ticket"
-    );
+document.getElementById("buy-ticket");
 
 const resultElement =
-    document.querySelector(
-        ".result"
-    );
+document.querySelector(".result");
 
 const playAgainButton =
-    document.querySelector(
-        ".play-again"
-    );
+document.querySelector(".play-again");
 
 const winOverlay =
-    document.querySelector(
-        ".win-overlay"
-    );
+document.querySelector(".win-overlay");
 
 const winAmountElement =
-    document.querySelector(
-        ".win-amount"
-    );
+document.querySelector(".win-amount");
 
-
-// =========================
-// GAME STATE
-// =========================
+/* =========================
+STATE
+========================= */
 
 let foxCoins = 0;
-
 let selectedBet = 0;
-
 let gameActive = false;
 
-
-// =========================
-// SERVER CONNECTION
-// =========================
+/* =========================
+CONNECTION
+========================= */
 
 ws.onopen = () => {
 
-    resultElement.textContent =
-        "Connected to FoxBet.";
+ws.send(JSON.stringify({
+    type: "identify",
+    playerId: playerId
+}));
 
-    updateBuyButton();
+resultElement.textContent =
+    "Connected to FoxBet.";
+
+updateBuyButton();
 
 };
-
 
 ws.onmessage = (event) => {
 
-    const data =
-        JSON.parse(event.data);
+const data =
+    JSON.parse(event.data);
 
 
-    // =====================
-    // BALANCE
-    // =====================
+/* BALANCE */
 
-    if (
-        data.type === "balance"
-    ) {
+if (data.type === "balance") {
 
-        foxCoins =
-            data.balance;
+    foxCoins =
+        data.balance;
 
-        balanceElement.textContent =
-            foxCoins;
-
-        updateBuyButton();
-
-        return;
-    }
-
-
-    // =====================
-    // TICKET STARTED
-    // =====================
-
-    if (
-        data.type === "ticket_started"
-    ) {
-
-        foxCoins =
-            data.balance;
-
-        balanceElement.textContent =
-            foxCoins;
-
-        startGame();
-
-        return;
-    }
-
-
-    // =====================
-    // REVEAL
-    // =====================
-
-    if (
-        data.type === "reveal"
-    ) {
-
-        revealTile(
-            data.index,
-            data.symbol
-        );
-
-        return;
-    }
-
-
-    // =====================
-    // FINISHED
-    // =====================
-
-    if (
-        data.type ===
-        "ticket_finished"
-    ) {
-
-        finishTicket(data);
-
-        return;
-    }
-
-
-    // =====================
-    // ERROR
-    // =====================
-
-    if (
-        data.type === "error"
-    ) {
-
-        resultElement.textContent =
-            data.message;
-
-        gameActive = false;
-
-        cells.forEach(cell => {
-
-            cell.disabled = false;
-
-        });
-
-        updateBuyButton();
-
-    }
-
-};
-
-
-ws.onerror = () => {
-
-    resultElement.textContent =
-        "Connection error.";
-
-};
-
-
-ws.onclose = () => {
-
-    gameActive = false;
-
-    resultElement.textContent =
-        "Disconnected from server.";
+    balanceElement.textContent =
+        foxCoins;
 
     updateBuyButton();
 
+    return;
+}
+
+
+/* TICKET STARTED */
+
+if (data.type === "ticket_started") {
+
+    foxCoins =
+        data.balance;
+
+    balanceElement.textContent =
+        foxCoins;
+
+    startGame();
+
+    return;
+}
+
+
+/* TILE REVEAL */
+
+if (data.type === "reveal") {
+
+    revealTile(
+        data.index,
+        data.symbol
+    );
+
+    return;
+}
+
+
+/* TICKET FINISHED */
+
+if (data.type === "ticket_finished") {
+
+    finishTicket(data);
+
+    return;
+}
+
+
+/* ERROR */
+
+if (data.type === "error") {
+
+    resultElement.textContent =
+        data.message;
+
+    updateBuyButton();
+
+    return;
+}
+
 };
 
+ws.onerror = () => {
 
-// =========================
-// BET SELECTION
-// =========================
+resultElement.textContent =
+    "Connection error.";
+
+};
+
+ws.onclose = () => {
+
+gameActive = false;
+
+resultElement.textContent =
+    "Disconnected from server.";
+
+updateBuyButton();
+
+};
+
+/* =========================
+BET SELECTION
+========================= */
 
 betButtons.forEach(button => {
 
-    button.addEventListener(
-        "click",
-        () => {
-
-            if (gameActive) {
-                return;
-            }
-
-
-            const amount =
-                Number(
-                    button.dataset.bet
-                );
-
-
-            if (!amount) {
-                return;
-            }
-
-
-            selectedBet =
-                amount;
-
-
-            selectedBetElement.textContent =
-                `${selectedBet} FC`;
-
-
-            // Remove old selection
-
-            betButtons.forEach(
-                other => {
-
-                    other.style.borderColor =
-                        "";
-
-                }
-            );
-
-
-            // Highlight selected
-
-            button.style.borderColor =
-                "#ff7a00";
-
-
-            resultElement.textContent =
-                `${selectedBet} FC bet selected.`;
-
-
-            updateBuyButton();
-
-        }
-    );
-
-});
-
-
-// =========================
-// BUY TICKET
-// =========================
-
-buyTicketButton.addEventListener(
+button.addEventListener(
     "click",
     () => {
 
-        if (selectedBet <= 0) {
+        if (gameActive)
+            return;
 
-            resultElement.textContent =
-                "Choose a bet first.";
 
+        const amount =
+            Number(
+                button.dataset.bet
+            );
+
+
+        selectedBet =
+            amount;
+
+
+        selectedBetElement.textContent =
+            `${selectedBet} FC`;
+
+
+        betButtons.forEach(
+            other => {
+
+                other.style.borderColor =
+                    "";
+            }
+        );
+
+
+        button.style.borderColor =
+            "#ff7a00";
+
+
+        resultElement.textContent =
+            `${selectedBet} FC bet selected.`;
+
+
+        updateBuyButton();
+    }
+);
+
+});
+
+/* =========================
+BUY TICKET
+========================= */
+
+buyTicketButton.addEventListener(
+"click",
+() => {
+
+    if (selectedBet <= 0) {
+
+        resultElement.textContent =
+            "Choose a bet first.";
+
+        return;
+    }
+
+
+    if (
+        ws.readyState !==
+        WebSocket.OPEN
+    ) {
+
+        resultElement.textContent =
+            "Not connected to server.";
+
+        return;
+    }
+
+
+    buyTicketButton.disabled =
+        true;
+
+
+    ws.send(JSON.stringify({
+
+        type: "buy_ticket",
+
+        bet: selectedBet
+
+    }));
+}
+
+);
+
+/* =========================
+BUY BUTTON STATE
+========================= */
+
+function updateBuyButton() {
+
+```
+buyTicketButton.disabled =
+    selectedBet <= 0 ||
+    selectedBet > foxCoins ||
+    gameActive ||
+    ws.readyState !==
+        WebSocket.OPEN;
+
+}
+
+/* =========================
+START GAME
+========================= */
+
+function startGame() {
+
+gameActive = true;
+
+
+cells.forEach(cell => {
+
+    cell.textContent = "";
+
+    cell.classList.remove(
+        "revealed",
+        "winning"
+    );
+
+    cell.disabled = false;
+});
+
+
+resultElement.textContent =
+    "Reveal every tile.";
+
+
+buyTicketButton.disabled =
+    true;
+
+
+playAgainButton.style.display =
+    "none";
+
+
+winOverlay.classList.remove(
+    "show"
+);
+
+}
+
+/* =========================
+REVEAL TILES
+========================= */
+
+cells.forEach((cell, index) => {
+
+cell.addEventListener(
+    "click",
+    () => {
+
+        if (!gameActive)
+            return;
+
+
+        if (
+            cell.classList.contains(
+                "revealed"
+            )
+        ) {
             return;
         }
 
@@ -286,294 +352,123 @@ buyTicketButton.addEventListener(
             ws.readyState !==
             WebSocket.OPEN
         ) {
-
-            resultElement.textContent =
-                "Not connected to server.";
-
             return;
         }
 
 
-        if (
-            selectedBet > foxCoins
-        ) {
-
-            resultElement.textContent =
-                "Not enough FoxCoins.";
-
-            return;
-        }
+        cell.disabled = true;
 
 
-        resultElement.textContent =
-            "Buying ticket...";
+        ws.send(JSON.stringify({
 
+            type: "reveal",
 
-        buyTicketButton.disabled =
-            true;
+            index: index
 
-
-        ws.send(
-            JSON.stringify({
-
-                type: "buy_ticket",
-
-                bet: selectedBet
-
-            })
-        );
-
+        }));
     }
 );
 
-
-// =========================
-// BUY BUTTON
-// =========================
-
-function updateBuyButton() {
-
-    buyTicketButton.disabled =
-        selectedBet <= 0 ||
-        selectedBet > foxCoins ||
-        gameActive ||
-        ws.readyState !==
-            WebSocket.OPEN;
-
-}
-
-
-// =========================
-// START GAME
-// =========================
-
-function startGame() {
-
-    gameActive = true;
-
-
-    cells.forEach(cell => {
-
-        cell.textContent = "";
-
-        cell.classList.remove(
-            "revealed",
-            "winning"
-        );
-
-        cell.disabled = false;
-
-    });
-
-
-    resultElement.textContent =
-        "Reveal every tile.";
-
-
-    buyTicketButton.disabled =
-        true;
-
-
-    playAgainButton.style.display =
-        "none";
-
-
-    winOverlay.classList.remove(
-        "show"
-    );
-
-}
-
-
-// =========================
-// REVEAL TILE
-// =========================
-
-cells.forEach((cell, index) => {
-
-    cell.addEventListener(
-        "click",
-        () => {
-
-            if (!gameActive) {
-                return;
-            }
-
-
-            if (
-                cell.classList.contains(
-                    "revealed"
-                )
-            ) {
-                return;
-            }
-
-
-            if (
-                ws.readyState !==
-                WebSocket.OPEN
-            ) {
-                return;
-            }
-
-
-            // Temporarily disable it
-            // while waiting for server
-
-            cell.disabled = true;
-
-
-            ws.send(
-                JSON.stringify({
-
-                    type: "reveal",
-
-                    index: index
-
-                })
-            );
-
-        }
-    );
-
 });
 
+function revealTile(index, symbol) {
 
-// =========================
-// DISPLAY TILE
-// =========================
-
-function revealTile(
-    index,
-    symbol
-) {
-
-    const cell =
-        cells[index];
+const cell =
+    cells[index];
 
 
-    if (!cell) {
-        return;
-    }
+if (!cell)
+    return;
 
 
-    cell.textContent =
-        symbol;
+cell.textContent =
+    symbol;
 
 
-    cell.classList.add(
-        "revealed"
-    );
+cell.classList.add(
+    "revealed"
+);
 
 
-    cell.disabled =
-        true;
+cell.disabled = true;
 
 
-    const revealed =
-        document.querySelectorAll(
-            ".cell.revealed"
-        ).length;
+const revealed =
+    document.querySelectorAll(
+        ".cell.revealed"
+    ).length;
 
 
-    const remaining =
-        9 - revealed;
+const remaining =
+    9 - revealed;
 
 
-    if (remaining > 0) {
+if (remaining > 0) {
 
-        resultElement.textContent =
-            `${remaining} tiles remaining.`;
+    resultElement.textContent =
+        `${remaining} tiles remaining.`;
 
-    } else {
+} else {
 
-        resultElement.textContent =
-            "Checking ticket...";
-
-    }
+    resultElement.textContent =
+        "Checking ticket...";
+}
 
 }
 
-
-// =========================
-// FINISH TICKET
-// =========================
+/* =========================
+FINISH TICKET
+========================= */
 
 function finishTicket(data) {
 
-    gameActive = false;
+```
+gameActive = false;
 
 
-    // =====================
-    // UPDATE BALANCE
-    // =====================
-
-    foxCoins =
-        data.balance;
+foxCoins =
+    data.balance;
 
 
-    balanceElement.textContent =
-        foxCoins;
+balanceElement.textContent =
+    foxCoins;
 
 
-    // =====================
-    // HIGHLIGHT WINNERS
-    // =====================
+if (Array.isArray(data.wins)) {
 
-    if (
-        Array.isArray(data.wins)
-    ) {
+    data.wins.forEach(win => {
 
-        data.wins.forEach(win => {
+        if (
+            Array.isArray(win.line)
+        ) {
 
-            if (
-                Array.isArray(win.line)
-            ) {
+            win.line.forEach(index => {
 
-                win.line.forEach(
-                    index => {
+                if (cells[index]) {
 
-                        if (cells[index]) {
-
-                            cells[index]
-                                .classList
-                                .add("winning");
-
-                        }
-
-                    }
-                );
-
-            }
-
-        });
-
-    }
+                    cells[index]
+                        .classList
+                        .add("winning");
+                }
+            });
+        }
+    });
+}
 
 
-    // =====================
-    // NO WIN
-    // =====================
+/* LOSS */
 
-    if (
-        data.totalWin <= 0
-    ) {
+if (data.totalWin <= 0) {
 
-        resultElement.textContent =
-            "No line. You lost the ticket.";
+    resultElement.textContent =
+        "No line. You lost the ticket.";
 
-        playAgainButton.style.display =
-            "block";
-
-        updateBuyButton();
-
-        return;
-    }
+}
 
 
-    // =====================
-    // WIN MESSAGE
-    // =====================
+/* WIN */
+
+else {
 
     let message = "";
 
@@ -586,6 +481,7 @@ function finishTicket(data) {
                 `${win.symbol} ` +
                 `+${win.amount} FC`;
 
+
             if (
                 index <
                 data.wins.length - 1
@@ -593,9 +489,7 @@ function finishTicket(data) {
 
                 message +=
                     " | ";
-
             }
-
         }
     );
 
@@ -608,113 +502,100 @@ function finishTicket(data) {
         message;
 
 
-    // =====================
-    // OVERLAY
-    // =====================
-
     showWinOverlay(
         data.totalWin
     );
-
-
-    playAgainButton.style.display =
-        "block";
-
-
-    updateBuyButton();
-
 }
 
 
-// =========================
-// WIN OVERLAY
-// =========================
+playAgainButton.style.display =
+    "block";
+
+
+updateBuyButton();
+
+}
+
+/* =========================
+WIN OVERLAY
+========================= */
 
 function showWinOverlay(amount) {
 
-    winAmountElement.textContent =
-        `+${amount} FC`;
+```
+winAmountElement.textContent =
+    `+${amount} FC`;
 
 
-    winOverlay.classList.add(
+winOverlay.classList.add(
+    "show"
+);
+
+
+setTimeout(() => {
+
+    winOverlay.classList.remove(
+        "show"
+    );
+
+}, 1800);
+
+}
+
+/* =========================
+NEW TICKET
+========================= */
+
+playAgainButton.addEventListener(
+"click",
+() => {
+
+    gameActive = false;
+
+
+    cells.forEach(cell => {
+
+        cell.textContent = "";
+
+        cell.classList.remove(
+            "revealed",
+            "winning"
+        );
+
+        cell.disabled = false;
+    });
+
+
+    selectedBet = 0;
+
+
+    selectedBetElement.textContent =
+        "None";
+
+
+    betButtons.forEach(button => {
+
+        button.style.borderColor =
+            "";
+    });
+
+
+    resultElement.textContent =
+        "Choose your bet.";
+
+
+    playAgainButton.style.display =
+        "none";
+
+
+    winOverlay.classList.remove(
         "show"
     );
 
 
-    setTimeout(() => {
-
-        winOverlay.classList.remove(
-            "show"
-        );
-
-    }, 1800);
-
+    updateBuyButton();
 }
 
-
-// =========================
-// NEW TICKET
-// =========================
-
-playAgainButton.addEventListener(
-    "click",
-    () => {
-
-        gameActive = false;
-
-
-        cells.forEach(cell => {
-
-            cell.textContent = "";
-
-            cell.classList.remove(
-                "revealed",
-                "winning"
-            );
-
-            cell.disabled = false;
-
-        });
-
-
-        selectedBet = 0;
-
-
-        selectedBetElement.textContent =
-            "None";
-
-
-        betButtons.forEach(
-            button => {
-
-                button.style.borderColor =
-                    "";
-
-            }
-        );
-
-
-        resultElement.textContent =
-            "Choose your bet.";
-
-
-        playAgainButton.style.display =
-            "none";
-
-
-        winOverlay.classList.remove(
-            "show"
-        );
-
-
-        updateBuyButton();
-
-    }
 );
-
-
-// =========================
-// INITIALIZE
-// =========================
 
 updateBuyButton();
