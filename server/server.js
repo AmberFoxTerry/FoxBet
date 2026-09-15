@@ -6,566 +6,495 @@ const PORT = process.env.PORT || 3000;
 const server = http.createServer();
 
 const wss = new WebSocketServer({
-    server
+server
 });
 
-
-// =========================
-// SYMBOLS
-// =========================
+/* =========================
+GAME DATA
+========================= */
 
 const symbols = [
-    {
-        symbol: "♥️",
-        chance: 50,
-        multiplier: 0.5
-    },
-    {
-        symbol: "🔥",
-        chance: 25,
-        multiplier: 1
-    },
-    {
-        symbol: "⭐",
-        chance: 15,
-        multiplier: 2
-    },
-    {
-        symbol: "🌙",
-        chance: 9,
-        multiplier: 2.5
-    },
-    {
-        symbol: "🦊",
-        chance: 1,
-        multiplier: 5
-    }
+{ symbol: "♥️", chance: 50, multiplier: 0.5 },
+{ symbol: "🔥", chance: 25, multiplier: 1 },
+{ symbol: "⭐", chance: 15, multiplier: 2 },
+{ symbol: "🌙", chance: 9, multiplier: 2.5 },
+{ symbol: "🦊", chance: 1, multiplier: 5 }
 ];
-
-
-// =========================
-// WINNING LINES
-// =========================
 
 const winningLines = [
+[0, 1, 2],
+[3, 4, 5],
+[6, 7, 8],
 
-    // Horizontal
-    [0, 1, 2],
-    [3, 4, 5],
-    [6, 7, 8],
+[0, 3, 6],
+[1, 4, 7],
+[2, 5, 8],
 
-    // Vertical
-    [0, 3, 6],
-    [1, 4, 7],
-    [2, 5, 8],
-
-    // Diagonal
-    [0, 4, 8],
-    [2, 4, 6]
+[0, 4, 8],
+[2, 4, 6]
 
 ];
 
+/* =========================
+PLAYERS
+========================= */
 
-// =========================
-// RANDOM SYMBOL
-// =========================
+const players = new Map();
+
+function getPlayer(playerId) {
+
+```
+if (!players.has(playerId)) {
+
+    players.set(playerId, {
+        balance: 200,
+        ticket: null
+    });
+
+    console.log(
+        `New player: ${playerId}`
+    );
+}
+
+return players.get(playerId);
+
+}
+
+/* =========================
+RANDOM SYMBOL
+========================= */
 
 function generateSymbol() {
 
-    const roll =
-        Math.random() * 100;
+const roll = Math.random() * 100;
 
-    let total = 0;
+let total = 0;
 
-    for (const item of symbols) {
+for (const item of symbols) {
 
-        total += item.chance;
+    total += item.chance;
 
-        if (roll < total) {
-            return item.symbol;
-        }
-
+    if (roll < total) {
+        return item.symbol;
     }
-
-    return "♥️";
 }
 
+return "♥️";
 
-// =========================
-// GET SYMBOL DATA
-// =========================
+}
 
 function getSymbolData(symbol) {
-
-    return symbols.find(
-        item => item.symbol === symbol
-    );
+return symbols.find(
+    item => item.symbol === symbol
+);
 
 }
 
-
-// =========================
-// CONNECTION
-// =========================
+/* =========================
+CONNECTION
+========================= */
 
 wss.on("connection", (socket) => {
 
-    console.log("Player connected!");
+console.log("Player connected!");
+
+let player = null;
 
 
-    // =====================
-    // PLAYER
-    // =====================
-
-    const player = {
-
-        balance: 200,
-
-        ticket: null
-
-    };
+socket.send(JSON.stringify({
+    type: "welcome",
+    message: "Connected to FoxBet 🦊"
+}));
 
 
-    // =====================
-    // WELCOME
-    // =====================
+socket.on("message", (rawData) => {
+
+    let data;
+
+    try {
+        data = JSON.parse(
+            rawData.toString()
+        );
+    } catch {
+
+        sendError(
+            "Invalid message."
+        );
+
+        return;
+    }
+
+
+    /* =========================
+       IDENTIFY PLAYER
+    ========================= */
+
+    if (data.type === "identify") {
+
+        if (
+            typeof data.playerId !== "string" ||
+            data.playerId.length < 5
+        ) {
+
+            sendError(
+                "Invalid player ID."
+            );
+
+            return;
+        }
+
+
+        player =
+            getPlayer(data.playerId);
+
+
+        sendBalance();
+
+        return;
+    }
+
+
+    if (!player) {
+
+        sendError(
+            "Player not identified."
+        );
+
+        return;
+    }
+
+
+    /* =========================
+       BUY TICKET
+    ========================= */
+
+    if (data.type === "buy_ticket") {
+
+        buyTicket(data.bet);
+
+        return;
+    }
+
+
+    /* =========================
+       REVEAL
+    ========================= */
+
+    if (data.type === "reveal") {
+
+        revealTile(data.index);
+
+        return;
+    }
+
+
+    sendError(
+        "Unknown request."
+    );
+});
+
+
+/* =========================
+   BALANCE
+========================= */
+
+function sendBalance() {
 
     socket.send(JSON.stringify({
 
-        type: "welcome",
+        type: "balance",
 
-        message:
-            "Connected to FoxBet server 🦊"
+        balance: player.balance
+
+    }));
+}
+
+
+/* =========================
+   BUY TICKET
+========================= */
+
+function buyTicket(bet) {
+
+    bet = Number(bet);
+
+    const validBets = [
+        2,
+        10,
+        50,
+        100
+    ];
+
+
+    if (!validBets.includes(bet)) {
+
+        sendError(
+            "Invalid bet."
+        );
+
+        return;
+    }
+
+
+    if (player.ticket !== null) {
+
+        sendError(
+            "You already have an active ticket."
+        );
+
+        return;
+    }
+
+
+    if (bet > player.balance) {
+
+        sendError(
+            "Not enough FoxCoins."
+        );
+
+        return;
+    }
+
+
+    player.balance -= bet;
+
+
+    player.ticket = {
+
+        bet: bet,
+
+        board: [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+        ],
+
+        revealed: 0
+    };
+
+
+    socket.send(JSON.stringify({
+
+        type: "ticket_started",
+
+        balance: player.balance
+
+    }));
+}
+
+
+/* =========================
+   REVEAL TILE
+========================= */
+
+function revealTile(index) {
+
+    index = Number(index);
+
+
+    if (player.ticket === null) {
+
+        sendError(
+            "You don't have an active ticket."
+        );
+
+        return;
+    }
+
+
+    if (
+        !Number.isInteger(index) ||
+        index < 0 ||
+        index > 8
+    ) {
+
+        sendError(
+            "Invalid tile."
+        );
+
+        return;
+    }
+
+
+    if (
+        player.ticket.board[index] !== null
+    ) {
+
+        sendError(
+            "That tile is already revealed."
+        );
+
+        return;
+    }
+
+
+    const symbol =
+        generateSymbol();
+
+
+    player.ticket.board[index] =
+        symbol;
+
+    player.ticket.revealed++;
+
+
+    socket.send(JSON.stringify({
+
+        type: "reveal",
+
+        index: index,
+
+        symbol: symbol,
+
+        revealed:
+            player.ticket.revealed
 
     }));
 
 
-    // =====================
-    // BALANCE
-    // =====================
+    if (
+        player.ticket.revealed === 9
+    ) {
 
-    sendBalance();
-
-
-    // =========================
-    // SEND BALANCE
-    // =========================
-
-    function sendBalance() {
-
-        socket.send(JSON.stringify({
-
-            type: "balance",
-
-            balance: player.balance
-
-        }));
-
+        finishTicket();
     }
+}
 
 
-    // =========================
-    // MESSAGE
-    // =========================
+/* =========================
+   FINISH TICKET
+========================= */
 
-    socket.on("message", (rawData) => {
+function finishTicket() {
 
-        let data;
+    const ticket =
+        player.ticket;
 
-        try {
+    const wins = [];
 
-            data =
-                JSON.parse(
-                    rawData.toString()
-                );
 
-        } catch {
+    for (
+        const line of winningLines
+    ) {
 
-            sendError(
-                "Invalid message."
-            );
+        const [
+            a,
+            b,
+            c
+        ] = line;
 
-            return;
-        }
-
-
-        // =====================
-        // BUY TICKET
-        // =====================
-
-        if (data.type === "buy_ticket") {
-
-            buyTicket(
-                data.bet
-            );
-
-            return;
-        }
-
-
-        // =====================
-        // REVEAL
-        // =====================
-
-        if (data.type === "reveal") {
-
-            revealTile(
-                data.index
-            );
-
-            return;
-        }
-
-
-        sendError(
-            "Unknown request."
-        );
-
-    });
-
-
-    // =========================
-    // BUY TICKET
-    // =========================
-
-    function buyTicket(bet) {
-
-        bet =
-            Number(bet);
-
-
-        // Valid bet?
-
-        const validBets = [
-            2,
-            10,
-            50,
-            100
-        ];
-
-
-        if (!validBets.includes(bet)) {
-
-            sendError(
-                "Invalid bet."
-            );
-
-            return;
-        }
-
-
-        // Already playing?
-
-        if (player.ticket !== null) {
-
-            sendError(
-                "You already have an active ticket."
-            );
-
-            return;
-        }
-
-
-        // Enough money?
-
-        if (bet > player.balance) {
-
-            sendError(
-                "Not enough FoxCoins."
-            );
-
-            return;
-        }
-
-
-        // Take bet
-
-        player.balance -= bet;
-
-
-        // Create ticket
-
-        player.ticket = {
-
-            bet: bet,
-
-            board: [
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null
-            ],
-
-            revealed: 0
-
-        };
-
-
-        console.log(
-            `Ticket purchased: ${bet} FC`
-        );
-
-
-        socket.send(JSON.stringify({
-
-            type: "ticket_started",
-
-            balance: player.balance
-
-        }));
-
-    }
-
-
-    // =========================
-    // REVEAL TILE
-    // =========================
-
-    function revealTile(index) {
-
-        index =
-            Number(index);
-
-
-        // No ticket
-
-        if (player.ticket === null) {
-
-            sendError(
-                "You don't have an active ticket."
-            );
-
-            return;
-        }
-
-
-        // Invalid index
-
-        if (
-            !Number.isInteger(index) ||
-            index < 0 ||
-            index > 8
-        ) {
-
-            sendError(
-                "Invalid tile."
-            );
-
-            return;
-        }
-
-
-        // Already revealed
-
-        if (
-            player.ticket.board[index] !== null
-        ) {
-
-            sendError(
-                "That tile is already revealed."
-            );
-
-            return;
-        }
-
-
-        // Generate symbol SERVER-SIDE
 
         const symbol =
-            generateSymbol();
+            ticket.board[a];
 
-
-        player.ticket.board[index] =
-            symbol;
-
-        player.ticket.revealed++;
-
-
-        // Send only this tile
-
-        socket.send(JSON.stringify({
-
-            type: "reveal",
-
-            index: index,
-
-            symbol: symbol,
-
-            revealed:
-                player.ticket.revealed
-
-        }));
-
-
-        // Finished?
 
         if (
-            player.ticket.revealed === 9
+            symbol !== null &&
+            symbol === ticket.board[b] &&
+            symbol === ticket.board[c]
         ) {
 
-            finishTicket();
+            const data =
+                getSymbolData(symbol);
 
+
+            const amount =
+                ticket.bet *
+                data.multiplier;
+
+
+            wins.push({
+
+                line: line,
+
+                symbol: symbol,
+
+                amount: amount
+
+            });
         }
-
     }
 
 
-    // =========================
-    // FINISH TICKET
-    // =========================
-
-    function finishTicket() {
-
-        const ticket =
-            player.ticket;
+    let totalWin = 0;
 
 
-        const wins = [];
+    for (
+        const win of wins
+    ) {
 
-
-        // =====================
-        // CHECK EVERY LINE
-        // =====================
-
-        for (
-            const line of winningLines
-        ) {
-
-            const [a, b, c] =
-                line;
-
-
-            const symbol =
-                ticket.board[a];
-
-
-            if (
-                symbol !== null &&
-                symbol === ticket.board[b] &&
-                symbol === ticket.board[c]
-            ) {
-
-                const data =
-                    getSymbolData(symbol);
-
-
-                const amount =
-                    ticket.bet *
-                    data.multiplier;
-
-
-                wins.push({
-
-                    line: line,
-
-                    symbol: symbol,
-
-                    amount: amount
-
-                });
-
-            }
-
-        }
-
-
-        // =====================
-        // TOTAL
-        // =====================
-
-        let totalWin = 0;
-
-
-        for (const win of wins) {
-
-            totalWin +=
-                win.amount;
-
-        }
-
-
-        // =====================
-        // PAY
-        // =====================
-
-        player.balance +=
-            totalWin;
-
-
-        console.log(
-            `Ticket finished: ${totalWin} FC won`
-        );
-
-
-        // =====================
-        // SEND RESULT
-        // =====================
-
-        socket.send(JSON.stringify({
-
-            type: "ticket_finished",
-
-            wins: wins,
-
-            totalWin: totalWin,
-
-            balance: player.balance
-
-        }));
-
-
-        // Remove ticket
-
-        player.ticket = null;
-
+        totalWin +=
+            win.amount;
     }
 
 
-    // =========================
-    // ERROR
-    // =========================
-
-    function sendError(message) {
-
-        socket.send(JSON.stringify({
-
-            type: "error",
-
-            message: message
-
-        }));
-
-    }
+    player.balance +=
+        totalWin;
 
 
-    // =========================
-    // CLOSE
-    // =========================
+    socket.send(JSON.stringify({
 
-    socket.on("close", () => {
+        type: "ticket_finished",
 
-        console.log(
-            "Player disconnected."
-        );
+        wins: wins,
 
-    });
+        totalWin: totalWin,
+
+        balance:
+            player.balance
+
+    }));
+
+
+    player.ticket = null;
+}
+
+
+/* =========================
+   ERROR
+========================= */
+
+function sendError(message) {
+
+    socket.send(JSON.stringify({
+
+        type: "error",
+
+        message: message
+
+    }));
+}
+
+
+socket.on("close", () => {
+
+    console.log(
+        "Player disconnected."
+    );
 
 });
 
+});
+
+/* =========================
+START SERVER
+========================= */
 
 server.listen(
-    PORT,
-    "0.0.0.0",
-    () => {
+PORT,
+"0.0.0.0",
+() => {
 
-        console.log(
-            `FoxBet server running on port ${PORT}`
-        );
+    console.log(
+        `FoxBet server running on port ${PORT}`
+    );
 
-    }
+}
+
 );
