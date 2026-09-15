@@ -3,19 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>FoxBet</title>
+
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
 <header class="top-bar">
-    <div class="logo">&gt; FoxBet</div>
+
+    <div class="logo">
+        &gt; FoxBet
+    </div>
 
     <div class="balance">
-        <span id="balance">200</span> <span>FoxCoins</span>
+        <span id="balance">200</span>
+        <span>FoxCoins</span>
     </div>
+
 </header>
+
 
 <main class="games">
 
@@ -41,17 +49,19 @@
 
 </main>
 
+
 <script>
-    const balanceElement = document.getElementById("balance");
+    const balanceElement =
+        document.getElementById("balance");
 
-    let foxCoins = localStorage.getItem("foxcoins");
-
-    if (foxCoins === null) {
-        foxCoins = 200;
-        localStorage.setItem("foxcoins", foxCoins);
+    // Give new players 200 FC ONCE
+    if (localStorage.getItem("foxcoins") === null) {
+        localStorage.setItem("foxcoins", "200");
     }
 
-    balanceElement.textContent = foxCoins;
+    // Load existing balance
+    balanceElement.textContent =
+        localStorage.getItem("foxcoins");
 </script>
 
 </body>
