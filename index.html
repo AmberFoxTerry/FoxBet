@@ -54,15 +54,17 @@
     const balanceElement =
         document.getElementById("balance");
 
-    // Give new players 200 FC ONCE
-    if (localStorage.getItem("foxcoins") === null) {
-        localStorage.setItem("foxcoins", "200");
-    }
+    const ws = new WebSocket("wss://foxbet.onrender.com");
 
-    // Load existing balance
-    balanceElement.textContent =
-        localStorage.getItem("foxcoins");
+    ws.onmessage = (event) => {
+
+        const data = JSON.parse(event.data);
+
+        if (data.type === "balance") {
+            balanceElement.textContent = data.balance;
+        }
+
+    };
 </script>
-
 </body>
 </html>
