@@ -18,7 +18,7 @@
     </div>
 
     <div class="balance">
-        <span id="balance">200</span>
+        <span id="balance">...</span>
         <span>FoxCoins</span>
     </div>
 
@@ -27,10 +27,14 @@
 
 <main class="tictacfox">
 
+    <button class="exit-button" onclick="window.location.href='index.html'">
+        ← Exit
+    </button>
+
     <h1>TicTacFox</h1>
 
     <p class="description">
-        Pick your bet. Play Tic-Tac-Toe. Beat the Fox.
+        Reveal the tiles. Find a matching line. Win FoxCoins.
     </p>
 
 
@@ -38,8 +42,8 @@
 
     <div class="bets">
 
+        <button data-bet="2">2 FC</button>
         <button data-bet="10">10 FC</button>
-        <button data-bet="25">25 FC</button>
         <button data-bet="50">50 FC</button>
         <button data-bet="100">100 FC</button>
 
@@ -106,6 +110,23 @@
 
 </main>
 
+
+<script>
+    const balanceElement =
+        document.getElementById("balance");
+
+    const ws = new WebSocket("wss://foxbet.onrender.com");
+
+    ws.onmessage = (event) => {
+
+        const data = JSON.parse(event.data);
+
+        if (data.type === "balance") {
+            balanceElement.textContent = data.balance;
+        }
+
+    };
+</script>
 
 <script src="tictacfox.js"></script>
 
