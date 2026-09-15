@@ -110,101 +110,51 @@ body {
     width: min(600px, 92%);
     margin: 0 auto;
 
-    padding-top: 100px;
-    padding-bottom: 50px;
+    padding-top: 95px;
+    padding-bottom: 60px;
 
     text-align: center;
 }
 
 .tictacfox h1 {
     font-size: 42px;
-    margin-bottom: 6px;
+    font-weight: 800;
+
+    margin-bottom: 5px;
 }
 
 .description {
-    color: #888;
-    margin-bottom: 25px;
+    color: #777;
+    font-size: 15px;
+
+    margin-bottom: 24px;
 }
 
-/* Bet buttons */
+/* =========================
+   BET BUTTONS
+========================= */
 
 .bets {
     display: flex;
     justify-content: center;
-    align-items: center;
+    flex-wrap: wrap;
 
     gap: 10px;
-    flex-wrap: wrap;
 }
 
 .bets button {
+    min-width: 75px;
+
+    padding: 10px 16px;
+
     background: #151515;
     color: white;
 
     border: 1px solid #333;
     border-radius: 8px;
 
-    padding: 10px 18px;
-
     font-size: 15px;
     font-weight: bold;
-
-    cursor: pointer;
-
-    transition: 0.15s;
-}
-
-.bets button:hover {
-    border-color: #ff7a00;
-    background: #1b1b1b;
-}
-
-.bets button:active {
-    transform: scale(0.96);
-}
-
-/* Selected bet */
-
-.selected-bet {
-    margin: 18px 0;
-
-    color: #aaa;
-    font-size: 16px;
-}
-
-.selected-bet span {
-    color: #ff7a00;
-    font-weight: bold;
-}
-
-/* Game grid */
-
-.grid {
-    width: 420px;
-    max-width: 100%;
-
-    aspect-ratio: 1;
-
-    margin: 20px auto;
-
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-
-    gap: 8px;
-}
-
-.cell {
-    width: 100%;
-    aspect-ratio: 1;
-
-    background: #121212;
-
-    border: 2px solid #292929;
-    border-radius: 10px;
-
-    color: white;
-
-    font-size: 42px;
 
     cursor: pointer;
 
@@ -212,6 +162,123 @@ body {
         background 0.15s,
         border-color 0.15s,
         transform 0.1s;
+}
+
+.bets button:hover {
+    background: #1c1c1c;
+    border-color: #ff7a00;
+}
+
+.bets button:active {
+    transform: scale(0.95);
+}
+
+/* =========================
+   SELECTED BET
+========================= */
+
+.selected-bet {
+    margin: 17px 0;
+
+    color: #888;
+
+    font-size: 16px;
+}
+
+.selected-bet span {
+    color: #ff7a00;
+    font-weight: 800;
+}
+
+/* =========================
+   BUY TICKET
+========================= */
+
+#buy-ticket {
+    width: 220px;
+
+    padding: 13px 20px;
+
+    background: #ff7a00;
+    color: #111;
+
+    border: none;
+    border-radius: 8px;
+
+    font-size: 16px;
+    font-weight: 900;
+
+    cursor: pointer;
+
+    transition:
+        background 0.15s,
+        transform 0.1s,
+        opacity 0.15s;
+}
+
+#buy-ticket:hover {
+    background: #ff922f;
+}
+
+#buy-ticket:active {
+    transform: scale(0.97);
+}
+
+#buy-ticket:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+/* =========================
+   BOARD
+========================= */
+
+.board-wrapper {
+    position: relative;
+
+    width: 420px;
+    max-width: 100%;
+
+    aspect-ratio: 1;
+
+    margin: 28px auto 18px;
+}
+
+.grid {
+    width: 100%;
+    height: 100%;
+
+    display: grid;
+
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+
+    gap: 8px;
+}
+
+.cell {
+    position: relative;
+
+    width: 100%;
+    height: 100%;
+
+    background: #111;
+
+    border: 2px solid #292929;
+    border-radius: 10px;
+
+    color: white;
+
+    font-size: 45px;
+    font-weight: bold;
+
+    cursor: pointer;
+
+    transition:
+        background 0.15s,
+        border-color 0.15s,
+        transform 0.1s,
+        box-shadow 0.15s;
 }
 
 .cell:hover {
@@ -225,25 +292,160 @@ body {
     transform: scale(0.97);
 }
 
-.cell[data-revealed] {
+.cell.revealed {
+    background: #151515;
     cursor: default;
 }
 
-.cell[data-revealed]:hover {
+.cell.revealed:hover {
     transform: none;
 }
 
-/* Result text */
+/* =========================
+   WINNING CELLS
+========================= */
+
+.cell.winning {
+    border: 4px solid #ff7a00;
+
+    background: #241407;
+
+    box-shadow:
+        0 0 0 2px #080808,
+        0 0 18px rgba(255, 122, 0, 0.7);
+
+    animation: winningPulse 0.8s ease-in-out infinite alternate;
+
+    z-index: 2;
+}
+
+@keyframes winningPulse {
+
+    from {
+        box-shadow:
+            0 0 0 2px #080808,
+            0 0 10px rgba(255, 122, 0, 0.45);
+    }
+
+    to {
+        box-shadow:
+            0 0 0 2px #080808,
+            0 0 25px rgba(255, 122, 0, 0.9);
+    }
+
+}
+
+/* =========================
+   WIN OVERLAY
+========================= */
+
+.win-overlay {
+    position: absolute;
+
+    left: 50%;
+    top: 50%;
+
+    transform: translate(-50%, -50%) scale(0.7);
+
+    z-index: 20;
+
+    min-width: 250px;
+
+    padding: 22px 30px;
+
+    background: rgba(8, 8, 8, 0.96);
+
+    border: 3px solid #ff7a00;
+    border-radius: 14px;
+
+    box-shadow:
+        0 0 30px rgba(255, 122, 0, 0.65);
+
+    pointer-events: none;
+
+    opacity: 0;
+
+    transition:
+        opacity 0.2s,
+        transform 0.25s;
+}
+
+.win-overlay.show {
+    opacity: 1;
+
+    transform:
+        translate(-50%, -50%)
+        scale(1);
+}
+
+.win-title {
+    color: #ff7a00;
+
+    font-size: 24px;
+    font-weight: 900;
+    letter-spacing: 3px;
+
+    margin-bottom: 2px;
+}
+
+.win-amount {
+    color: white;
+
+    font-size: 54px;
+    line-height: 1;
+
+    font-weight: 1000;
+
+    text-shadow:
+        0 3px 0 #000,
+        0 0 20px rgba(255, 122, 0, 0.65);
+}
+
+/* =========================
+   RESULT
+========================= */
 
 .result {
-    min-height: 30px;
+    min-height: 26px;
 
-    margin-top: 15px;
+    margin-top: 12px;
 
-    color: #aaa;
+    color: #999;
 
-    font-size: 16px;
+    font-size: 15px;
     font-weight: bold;
+}
+
+/* =========================
+   NEW TICKET
+========================= */
+
+.play-again {
+    display: none;
+
+    margin: 18px auto 0;
+
+    padding: 11px 24px;
+
+    background: #151515;
+    color: white;
+
+    border: 1px solid #333;
+    border-radius: 8px;
+
+    font-size: 15px;
+    font-weight: bold;
+
+    cursor: pointer;
+
+    transition:
+        background 0.15s,
+        border-color 0.15s;
+}
+
+.play-again:hover {
+    background: #1c1c1c;
+    border-color: #ff7a00;
 }
 
 /* =========================
@@ -251,11 +453,6 @@ body {
 ========================= */
 
 @media (max-width: 700px) {
-
-    .games {
-        grid-template-columns: 1fr;
-        width: 94%;
-    }
 
     .top-bar {
         padding: 0 18px;
@@ -269,20 +466,39 @@ body {
         font-size: 16px;
     }
 
+    .games {
+        width: 94%;
+        grid-template-columns: 1fr;
+    }
+
     .tictacfox {
         width: 94%;
-        padding-top: 90px;
+        padding-top: 88px;
     }
 
     .tictacfox h1 {
         font-size: 34px;
     }
 
-    .grid {
+    .board-wrapper {
         width: min(420px, 100%);
     }
 
     .cell {
         font-size: 32px;
     }
+
+    .win-overlay {
+        min-width: 200px;
+        padding: 18px 22px;
+    }
+
+    .win-title {
+        font-size: 19px;
+    }
+
+    .win-amount {
+        font-size: 42px;
+    }
+
 }
